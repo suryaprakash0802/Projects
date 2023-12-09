@@ -1,0 +1,97 @@
+# Ansible Automation for Server Configuration
+
+## Overview
+This project focuses on automating server provisioning and configuration using Ansible. 
+Ansible playbooks have been developed for software installation and updates. 
+The project aims to streamline the server setup process, enhance efficiency, and provide a reliable and reproducible infrastructure.
+
+## Features
+- Automated server provisioning.
+- Ansible playbooks for software installation and updates.
+- Playbook error troubleshooting and efficiency improvements.
+
+### Prerequisites
+- Ansible installed on the control machine.
+
+### Usage
+1. Clone the repository:
+  
+   git clone https://github.com/Surajshakywal/DevOpsClassCodes.git
+   cd DevOpsClassCodes
+
+  ansible-playbook -i inventory/hosts.yml playbook.yml
+
+[Project Structure]
+
+# playbook.yml: Main Ansible playbook for server configuration.
+---
+- name: Configure Web Server
+  hosts: web_servers
+  become: yes  # Run tasks with elevated privileges (sudo)
+
+  tasks:
+    - name: Update package cache
+      package:
+        name: '*'
+        state: latest
+      become: yes
+
+    - name: Install Apache web server
+      package:
+        name: apache2  # Adjust based on your package manager (e.g., httpd for Ubuntu)
+        state: present
+      become: yes
+
+    - name: Start Apache service
+      service:
+        name: apache2  # Adjust based on your service manager (e.g., httpd for ubuntu)
+        state: started
+      become: yes
+
+    - name: Enable Apache service on boot
+      service:
+        name: apache2  # Adjust based on your service manager (e.g., httpd for ubuntu)
+        enabled: yes
+      become: yes
+
+    - name: Create an index.html file
+      template:
+        src: templates/index.html.j2
+        dest: /var/www/html/index.html
+      become: yes
+
+# inventory/hosts.yml: Inventory file containing server details.
+---
+web_servers:
+  hosts:
+    target_server:
+      ansible_host: 10.128.0.1
+      ansible_user: worker_node1
+
+# roles/: Directory containing Ansible roles for specific tasks.
+# tasks/: Task files defining individual tasks within roles.
+# templates/: Jinja2 templates for dynamic configuration files.
+# vars/: Variable files for storing variables used in playbooks.
+
+ansible-server-automation/
+|-- playbook.yml
+|-- inventory/
+|   `-- hosts.yml
+|-- roles/
+|   `-- web_server/
+|       |-- tasks/
+|       |   |-- main.yml
+|       |-- templates/
+|       |   `-- index.html.j2
+|       |-- defaults/
+|       |   `-- main.yml
+|       `-- meta/
+|           `-- main.yml
+
+
+{Troubleshooting}
+If you encounter any issues with the playbooks, consider the following:
+
+- Check the Ansible documentation for troubleshooting tips.
+- Review playbook logs for error messages.
+- Ensure that your inventory file is correctly configured.
