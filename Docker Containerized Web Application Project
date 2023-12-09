@@ -1,0 +1,57 @@
+/Web-Application
+|-- Dockerfile
+|-- docker-compose.yml
+|-- app
+|   |-- nginx-proxy.yaml
+|   |-- .app
+|-- README.md
+
+
+1. dockerfile.yaml
+
+FROM some-yaml-runtime:latest
+WORKDIR /app
+COPY . /app
+RUN apt-get update && \
+    apt-get install -y your-dependency
+EXPOSE 80
+ENV NAME World
+CMD ["nginx", "-g", "daemon off;", "nginx-proxy.yaml"]
+
+
+2. docker-compose.yaml
+
+version: '3'
+services:
+  web:
+    build: .
+    ports:
+      - "8085:80"
+    volumes:
+      - ./app:/app
+
+3. README.md
+
+#  Dockerized YAML-based web application 
+
+This project Dockerizes a YAML-based web application using Docker. 
+It manages container lifecycles, scaling, and orchestration, resolving runtime issues to maintain the availability of containerized services.
+
+These instructions will help you set up and run the containerized application.
+
+### Prerequisites
+
+- Docker installed on your machine
+
+### Build and Run
+
+1. Clone the repository:
+
+   git clone https://github.com/nginx-proxy/nginx-proxy.git
+   cd nginx-proxy
+   docker build -t nginx-proxy
+   docker-compose up
+The web application should now be accessible at
+http://localhost:8085/
+
+
