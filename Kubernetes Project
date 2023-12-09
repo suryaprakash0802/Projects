@@ -1,0 +1,47 @@
+# Kubernetes Deployment for Microservices
+
+This project involves deploying a multi-node Kubernetes cluster on AWS EC2 instances and orchestrating containers to host a microservices-based application. 
+The deployment includes troubleshooting network issues and optimizing resource allocation.
+
+## Prerequisites
+
+1. AWS Account: You need an AWS account to create EC2 instances.
+2. AWS CLI: Install and configure the AWS CLI on your local machine.
+3. kubectl: Install kubectl, the Kubernetes command-line tool.
+4. eksctl: Install eksctl, a tool to create and manage Kubernetes clusters on Amazon EKS.
+
+## Setup Instructions
+
+1. **AWS EC2 Instances:**
+   - Launch AWS EC2 instances for your Kubernetes nodes. Ensure instances have the necessary IAM roles and permissions.
+
+2. **Kubernetes Cluster:**
+   - Use eksctl to create a Kubernetes cluster on AWS EKS. 
+
+     eksctl create cluster --name my-cluster --node-type t2.micro --nodes 2
+     ```
+
+3. **Microservices Application:**
+   - Deploy your microservices-based application to the Kubernetes cluster using Kubernetes manifests (YAML files).
+
+4. **Troubleshooting:**
+   - If you encounter network issues or need to troubleshoot, check the logs using kubectl logs and describe pods/services.
+
+5. **Resource Optimization:**
+   - Optimize resource allocation for your microservices pods. Update resource requests and limits in the Kubernetes manifests.
+
+## Directory Structure
+
+- `/k8s`: Contains Kubernetes manifests for deploying microservices.
+- `/scripts`: Includes any scripts used for deployment or troubleshooting.
+- `/docs`: Documentation and additional resources.
+
+## Usage
+
+Provide instructions on how to deploy and run the microservices application on the Kubernetes cluster.
+
+## Contributing
+
+If you'd like to contribute or report issues, please follow the standard GitHub procedures for forking, creating branches, and submitting pull requests.
+
+
