@@ -1,4 +1,4 @@
-# PERSONAL PROJECTS
+# PROJECTS
 
 1. Kubernetes Deployment for Microservices
 - Deployed a multi-node Kubernetes cluster on AWS EC2 instances.
