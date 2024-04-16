@@ -1,38 +1,76 @@
-[ Go to the AWS Managment Console ]
+1. Create a VPC (Virtual Private Cloud):
+    - Go to the AWS Management Console and navigate to the VPC service.
+     - Click on "Create VPC" and provide the following details:
+          - VPC name: e.g., "ELC-VPC"
+          - IPv4 CIDR block: "0.0.0.0/16"
+          - Tenancy: "Default"
+       - Click "Create VPC" to proceed.
 
-1.	Create a VPC (Virtual Private Cloud):
-   •	Create a new VPC with a CIDR block of 0.0.0.0/16.
-   •	Create two subnets within the VPC:
-     •	Public subnet with CIDR 10.0.1.0/24
-     •	Private subnet with CIDR 10.0.2.0/24
+2. Create Subnets:
+    - In the VPC dashboard, click on "Subnets" in the left-hand menu.
+    - Click "Create subnet" and provide the following details:
+           - VPC: Select the VPC you just created.
+           - Availability Zone: Choose an appropriate Availability Zone.
+           - IPv4 CIDR block: "10.0.1.0/24" (for the public subnet)
+     - Repeat the process to create a private subnet with CIDR block "10.0.2.0/24".
 
-2.	Configure Routing Tables:
-    •	Create a public route table and associate it with the public subnet.
-    •	Create a private route table and associate it with the private subnet.
-    •	Add an Internet Gateway to the VPC to enable internet connectivity for the public subnet.
+3. Create Route Tables:
+   - In the VPC dashboard, click on "Route Tables" in the left-hand menu.
+   - Click "Create route table" and provide the following details:
+      - VPC: Select the VPC you created.
+      - Name tag: "Public Route Table"
+   - Repeat the process to create a private route table.
 
-3.	Deploy the Frontend Application:
-    •	Launch an Elastic Beanstalk environment to host the frontend application.
-    •	Set up a CodePipeline to enable continuous deployment of the frontend application from a GitHub repository.
-          - https://github.com/suryaprakash0802/Python-AWS-RDS.git
+4. Associate Subnets with Route Tables:
+   - In the "Route Tables" section, select the public route table.
+   - Click on the "Subnet Associations" tab and click "Edit subnet associations".
+   - Select the public subnet and click "Save associations".
+   - Repeat the process to associate the private subnet with the private route table.
 
-4.	Deploy the Backend Application:
-    •	Launch an EC2 instance in the public subnet to host the backend application.
-    •	Connect to the EC2 instance using the Fleet Manager remote desktop.
-    •	Install Python on the EC2 instance and clone the backend application repository from GitHub.
-           - https://github.com/suryaprakash0802/Python-AWS-RDS.git 
-    •	Modify the backend application code to connect to the database.
+5. Create an Internet Gateway:
+   - In the VPC dashboard, click on "Internet Gateways" in the left-hand menu.
+   - Click "Create internet gateway" and provide a name tag.
+   - Select the created internet gateway and click "Actions" > "Attach to VPC".
+   - Choose the VPC you created and click "Attach internet gateway".
 
-5.	Deploy the Database:
-    •	Launch an RDS (Relational Database Service) instance in the private subnet.
-    •	Configure the RDS instance to use the VPC and the security group created earlier.
-    •	Connect to the RDS instance from the backend EC2 instance using the PostgreSQL client (pgAdmin).
-    •	Create a table in the database and insert some sample data.
+6. Deploy the Frontend Application:
+    - In the AWS Management Console, navigate to the Elastic Beanstalk service.
+    - Click "Create a new application" and provide the following details:
+        - Application name: "ELC-Frontend"
+        - Platform: Choose the appropriate platform for your frontend application (e.g., Node.js, Python, etc.).
 
-6.	Integrate the Frontend and Backend:
-    •	Update the frontend application code to use the correct URL for the backend API.
-    •	Deploy the updated frontend application to the Elastic Beanstalk environment using the CodePipeline.
-    •	Verify the end-to-end functionality by accessing the frontend application and ensuring it can retrieve data from the backend API and the RDS database.
+7. Set up the CodePipeline for Continuous Deployment:
+    - In the AWS Management Console, navigate to the CodePipeline service.
+    - Click "Create pipeline" and provide the following details:
+        - Pipeline name: "ELC-Frontend-Pipeline"
+        - Source provider: Choose the appropriate source provider (e.g., GitHub, CodeCommit, etc.).
+              -  https://github.com/suryaprakash0802/Python-AWS-RDS.git
+        - Destination: Select the Elastic Beanstalk environment you created for the frontend.
+
+8. Deploy the Backend Application:
+      - In the AWS Management Console, navigate to the EC2 service.
+      - Click "Launch instance" and provide the following details:
+            - Amazon Machine Image (AMI): Choose an appropriate AMI for your backend application (e.g., Amazon Linux 2, Ubuntu, etc.).
+            - Instance type: Select an appropriate instance type for your workload.
+            - Network: Choose the VPC you created.
+            - Subnet: Select the public subnet.
+      - Launch the instance and connect to it using the Fleet Manager remote desktop.
+      - Install Python on the instance and clone the backend application repository from GitHub.
+      - Modify the backend application code to connect to the database.
+
+9. Deploy the Database:
+    - In the AWS Management Console, navigate to the RDS service.
+    - Click "Create database" and provide the following details:
+        - Database creation method: "Standard create"
+        - Engine type: Choose the appropriate database engine (e.g., PostgreSQL, MySQL, etc.).
+        - DB instance class: Select an appropriate instance class for your workload.
+        - Connectivity: Choose the VPC you created and the private subnet.
+    - Connect to the RDS instance from the backend EC2 instance using the PostgreSQL client (pgAdmin) and create a table with sample data.
+
+10. Integrate the Frontend and Backend:
+      - Update the frontend application code to use the correct URL for the backend API.
+      - Commit the changes to the frontend repository, which will trigger the CodePipeline to deploy the updated application.
+      - Verify the end-to-end functionality by accessing the frontend application and ensuring it can retrieve data from the backend API and the RDS database.
 
 This is a complete solution demonstrates a comprehensive approach to building a scalable and secure application architecture on AWS, 
 leveraging various services such as VPC, EC2, Elastic Beanstalk, CodePipeline, and RDS. It highlights the importance of network isolation, 
