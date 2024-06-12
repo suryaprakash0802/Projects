@@ -1,0 +1,126 @@
+# Prerequisites
+# On server :
+- php 8.2.19 or (which version app needed)
+- intsall apache2/nginx server on VPS
+- composer installed on working dir. also
+- MySQL database : create database and also assign password to database and upload latest table on database
+
+- clone website on /var/www/
+- edit .env file on working dir.
+
+- GitHub Repository: Ensure your Laravel project is pushed to a GitHub repository.
+- Server with SSH Access: You need a server where you can deploy your Laravel application. Ensure you have SSH access to this server. like VPS, EC2, Auzre Virtual machine
+
+- SSH Key: Generate an SSH key pair if you don't have one. You'll need to add the public key to your server's authorized keys.
+
+Step 1: Set Up GitHub Secrets
+- Go to your GitHub repository.
+- Navigate to Settings > Secrets and click on New repository secret.
+- Add the following secrets:
+                  SSH_PRIVATE_KEY: The private SSH key (ensure you copy this carefully and keep it private).
+
+Step 2: Create the GitHub Actions Workflow
+- In your GitHub repository, create a new directory named .github/workflows.
+- Inside this directory, create a new file named deploy.yml.
+- Add the following content to deploy.yml:
+
+name: Deploy Laravel App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 62.72.1.215 >> ~/.ssh/known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Copy files to VPS
+        run: |
+          ssh root@62.72.1.215 "mkdir -p /var/www/readium_laravel"
+          scp -r * root@62.72.1.215:/var/www/readium_laravel
+
+      - name: Install Composer dependencies
+        run: |
+          ssh root@62.72.1.215 "cd /var/www/readium_laravel && composer install --no-dev --prefer-dist --no-interaction || { echo 'Composer install failed'; exit 1; }"
+
+      - name: SSH commands
+        run: |
+          ssh root@62.72.1.215 << 'EOF'
+          cd /var/www/readium_laravel
+          php artisan migrate --force
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan event:cache
+          php artisan storage:link
+          php artisan optimize
+          EOF
+
+
+# Explanation of the Workflow Steps:
+
+- Checkout code: Checks out your Laravel project's code.
+- Set up PHP: Sets up the specified PHP version.
+- Install dependencies: Installs PHP dependencies using Composer.
+- Prepare .env file: Copies the .env.example to .env and generates an application key.
+- Run tests: Runs Laravel tests (optional but recommended).
+
+# Deploy to server:
+
+- Creates a temporary SSH key file and sets the correct permissions.
+- Uses 'scp -r' to synchronize your project files to the server.
+- Connects to the server via SSH and runs a series of commands to install dependencies, run migrations, cache configurations, routes, views, and restart the queue worker.
+
+# Final Notes
+# Use these commands for error free auto deployment on server
+
+# run these command on this dir. when apache2 server :
+
+a2ensite readium.conf
+a2dissite 000-default.conf
+a2enmod rewrite
+systemctl restart apache2
+
+sudo chmod -R 775 /var/www/readium/storage /var/www/readium/bootstrap/cache
+
+# check permissions 
+
+ls -ld /var/www/readium_laravel
+ls -ld /var/www/readium_laravel/storage
+ls -ld /var/www/readium_laravel/storage/logs
+ls -l /var/www/readium_laravel/storage/logs/laravel.log
+
+php artisan key:generate
+when need php artisan migrate
+sudo php artisan config:cache
+sudo php artisan route:cache
+sudo php artisan view:cache
+
+systemctl restart apache2
+
+systemctl restart MySQL
+
+# AND run phpMyAdmin 
+
+sudo apt update
+sudo apt install phpMyAdmin
+php -v
+sudo a2enmod php8.2
+sudo systemctl restart apache2
+
+- Ensure /var/www/readium_laravel  the actual path to your Laravel project on your server.
+- Adjust PHP version, test steps, and other commands as per your project's requirements.
+- Ensure your server has the necessary permissions and setup to run the Laravel project (e.g., web server configuration, database access).
