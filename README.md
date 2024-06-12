@@ -30,3 +30,7 @@
 - Demonstrated proficiency in AWS services like VPC, EC2, RDS, Elastic Beanstalk, CodePipeline
 - Built a scalable, secure, and robust cloud-based web application
 
+6. Deploy php Laravel Web application on Hostinger VPS:
+-  install necessary software like Apache, PHP, Composer, and Laravel.
+- Laravel project files to the VPS, configure the database in the .env file, and install Composer dependencies.
+- Configure Apache & point public directory & set correct file permissions for storage & bootstrap/cache dir. 
