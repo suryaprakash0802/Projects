@@ -1,97 +1,130 @@
-# Ansible Automation for Server Configuration
+## Prerequisites
 
-## Overview
-This project focuses on automating server provisioning and configuration using Ansible. 
-Ansible playbooks have been developed for software installation and updates. 
-The project aims to streamline the server setup process, enhance efficiency, and provide a reliable and reproducible infrastructure.
+1. Control Node: A machine where Ansible is installed (e.g., your local machine or a dedicated server).
+2. Managed Nodes: Servers you want to configure using Ansible (e.g., remote servers like DigitalOcean, AWS, etc.).
+3. SSH Access: Ensure you have SSH access to the managed nodes from the control node.
+4. Python: Ansible requires Python on the control node and managed nodes.
 
-## Features
-- Automated server provisioning.
-- Ansible playbooks for software installation and updates.
-- Playbook error troubleshooting and efficiency improvements.
 
-### Prerequisites
-- Ansible installed on the control machine.
+Step 1: Install Ansible
+On Ubuntu:
 
-### Usage
-1. Clone the repository:
-  
-   git clone https://github.com/Surajshakywal/DevOpsClassCodes.git
-   cd DevOpsClassCodes
+sudo apt update
+sudo apt install ansible -y
 
-  ansible-playbook -i inventory/hosts.yml playbook.yml
+Step 2: Configure SSH Access
+Generate SSH Key Pair (if not already generated):
 
-[Project Structure]
+ssh-keygen -t rsa -b 4096 -C username@server_ip
 
-# playbook.yml: Main Ansible playbook for server configuration.
+Copy SSH Key to Managed Nodes:
+ssh-copy-id username@serer_ip
+
+Step 3: Set Up Ansible Inventory
+Create an Inventory File:
+Create a file named hosts or inventory and list your managed nodes.
+
+[webservers]
+web1 ansible_host=192.168.1.101 ansible_user=user
+web2 ansible_host=192.168.1.102 ansible_user=user
+
+[dbservers]
+db1 ansible_host=192.168.1.201 ansible_user=user
+
+Step 4: Create Ansible Playbooks
+Create a Directory for Playbooks
+
+mkdir ansible-playbooks
+cd ansible-playbooks
+
+Create a Playbook for Software Installation:
+Create a file named install_software.yml
+
 ---
-- name: Configure Web Server
-  hosts: web_servers
-  become: yes  # Run tasks with elevated privileges (sudo)
+- name: Install and update software
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+- name: Install MySQL
+  hosts: dbservers
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install MySQL server
+      apt:
+        name: mysql-server
+        state: present
+
+Run the Playbook:
+
+ansible-playbook -i hosts install_software.yml
+
+Step 5: Troubleshoot Playbook Errors
+Verbose Output:
+Use -v for verbose output to get more information about errors.
+
+ansible-playbook -i hosts install_software.yml -v
+
+Common Issues:
+
+- SSH Connectivity: Ensure SSH keys are correctly set up.
+- Sudo Permissions: Ensure the ansible_user has sudo permissions.
+- Package Manager Issues: Ensure the correct package manager is used (apt, yum, etc.).
+
+
+---
+- name: Install and configure web servers
+  hosts: webservers
+  become: yes
+  vars:
+    nginx_package: nginx
 
   tasks:
-    - name: Update package cache
-      package:
-        name: '*'
-        state: latest
-      become: yes
+    - name: Update apt cache
+      apt:
+        update_cache: yes
 
-    - name: Install Apache web server
-      package:
-        name: apache2  # Adjust based on your package manager (e.g., httpd for Ubuntu)
+    - name: Install Nginx
+      apt:
+        name: "{{ nginx_package }}"
         state: present
-      become: yes
+      notify:
+        - Restart Nginx
 
-    - name: Start Apache service
+  handlers:
+    - name: Restart Nginx
       service:
-        name: apache2  # Adjust based on your service manager (e.g., httpd for ubuntu)
-        state: started
-      become: yes
+        name: nginx
+        state: restarted
 
-    - name: Enable Apache service on boot
-      service:
-        name: apache2  # Adjust based on your service manager (e.g., httpd for ubuntu)
-        enabled: yes
-      become: yes
+- name: Install and configure database servers
+  hosts: dbservers
+  become: yes
+  vars:
+    mysql_package: mysql-server
 
-    - name: Create an index.html file
-      template:
-        src: templates/index.html.j2
-        dest: /var/www/html/index.html
-      become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
 
-# inventory/hosts.yml: Inventory file containing server details.
----
-web_servers:
-  hosts:
-    target_server:
-      ansible_host: 10.128.0.1
-      ansible_user: worker_node1
-
-# roles/: Directory containing Ansible roles for specific tasks.
-# tasks/: Task files defining individual tasks within roles.
-# templates/: Jinja2 templates for dynamic configuration files.
-# vars/: Variable files for storing variables used in playbooks.
-
-ansible-server-automation/
-|-- playbook.yml
-|-- inventory/
-|   `-- hosts.yml
-|-- roles/
-|   `-- web_server/
-|       |-- tasks/
-|       |   |-- main.yml
-|       |-- templates/
-|       |   `-- index.html.j2
-|       |-- defaults/
-|       |   `-- main.yml
-|       `-- meta/
-|           `-- main.yml
-
-
-{Troubleshooting}
-If you encounter any issues with the playbooks, consider the following:
-
-- Check the Ansible documentation for troubleshooting tips.
-- Review playbook logs for error messages.
-- Ensure that your inventory file is correctly configured.
+    - name: Install MySQL server
+      apt:
+        name: "{{ mysql_package }}"
+        state: present
