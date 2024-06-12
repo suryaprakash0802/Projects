@@ -1,57 +1,175 @@
-/Web-Application
-|-- Dockerfile
-|-- docker-compose.yml
-|-- app
-|   |-- nginx-proxy.yaml
-|   |-- .app
-|-- README.md
+Step 1: Set Up Your Environment
+Install Docker:
+
+On Ubuntu:
+
+sudo apt update
+sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
 
 
-1. dockerfile.yaml
+## Install Docker Compose:
 
-FROM some-yaml-runtime:latest
-WORKDIR /app
-COPY . /app
-RUN apt-get update && \
-    apt-get install -y your-dependency
+On Ubuntu:
+
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+Step 2: Create Dockerfile on root directory of project:
+
+- Create a Dockerfile in your project directory:
+Dockerfile
+
+# Use an official PHP runtime as a parent image
+FROM php:8.2-apache
+
+# Set the working directory
+WORKDIR /var/www/html
+
+# Copy the current directory contents into the container
+COPY . /var/www/html
+
+# Install dependencies
+RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev
+
+# Install additional PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd
+
+# Enable Apache mod_rewrite
+RUN a2enmod rewrite
+
+# Expose port 80
 EXPOSE 80
-ENV NAME World
-CMD ["nginx", "-g", "daemon off;", "nginx-proxy.yaml"]
 
+# Run Apache in the foreground
+CMD ["apache2-foreground"]
 
-2. docker-compose.yaml
+Step 3: Create docker-compose.yml on root dir. also:
 
-version: '3'
+- Create a docker-compose.yml file to define services:
+
+version: '3.8'
+
 services:
   web:
     build: .
     ports:
-      - "8085:80"
+      - "80:80"
     volumes:
-      - ./app:/app
+      - .:/var/www/html
+    networks:
+      - webnet
 
-3. README.md
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: my_database
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user_password
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - webnet
 
-#  Dockerized YAML-based web application 
+volumes:
+  db_data:
 
-This project Dockerizes a YAML-based web application using Docker. 
-It manages container lifecycles, scaling, and orchestration, resolving runtime issues to maintain the availability of containerized services.
+networks:
+  webnet:
 
-These instructions will help you set up and run the containerized application.
+Step 4: Build and Run Containers
 
-### Prerequisites
+## Build and run the containers using Docker Compose:
+docker-compose up --build -d
 
-- Docker installed on your machine
+## Check running containers:
+docker-compose ps
 
-### Build and Run
+Step 5: Manage Container Lifecycles
+## Stop containers:
+docker-compose stop
 
-1. Clone the repository:
+## Start containers:
+docker-compose start
 
-   git clone https://github.com/nginx-proxy/nginx-proxy.git
-   cd nginx-proxy
-   docker build -t nginx-proxy
-   docker-compose up
-The web application should now be accessible at
-http://localhost:8085/
+## Restart containers:
+docker-compose restart
 
+## Remove containers:
+docker-compose down
 
+Step 6: Scaling Services
+
+## Scale services using Docker Compose:
+docker-compose up -d --scale web=3
+
+Step 7: Orchestration with Docker Swarm
+## Initialize Docker Swarm:
+
+docker swarm init
+## Deploy stack with Docker Swarm:
+
+Create docker-stack.yml:
+
+yaml
+Copy code
+version: '3.8'
+
+services:
+  web:
+    image: my_web_image
+    ports:
+      - "80:80"
+    networks:
+      - webnet
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: my_database
+      MYSQL_USER: user
+      MYSQL_PASSWORD: user_password
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  db_data:
+
+networks:
+ webnet:
+
+## Deploy the stack:
+docker stack deploy -c docker-stack.yml my_stack
+
+## Check stack services:
+docker stack services my_stack
+
+Step 8: Troubleshooting Runtime Issues
+## Check container logs:
+docker-compose logs
+
+##Access a running container:
+docker exec -it <container_id> /bin/bash
+
+## Common Issues:
+- Port Conflicts: Ensure ports are not in use by other services.
+- Database Connectivity: Verify database environment variables and network configurations.
+- File Permissions: Check and correct file permissions within the container.
