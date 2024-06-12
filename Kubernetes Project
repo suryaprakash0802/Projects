@@ -1,47 +1,167 @@
-# Kubernetes Deployment for Microservices
+Step 1: Set Up a Multi-Node Kubernetes Cluster on AWS EC2
+## Launch EC2 Instances:
 
-This project involves deploying a multi-node Kubernetes cluster on AWS EC2 instances and orchestrating containers to host a microservices-based application. 
-The deployment includes troubleshooting network issues and optimizing resource allocation.
+- Launch the required number of EC2 instances (e.g., 1 master node and 2 worker nodes) on AWS.
+- Ensure instances are in the same VPC and security groups allow necessary ports (e.g., 6443 for Kubernetes API server, 10250 for kubelet API, 30000-32767 for NodePort services).
 
-## Prerequisites
+## Install Docker on Each Node:
 
-1. AWS Account: You need an AWS account to create EC2 instances.
-2. AWS CLI: Install and configure the AWS CLI on your local machine.
-3. kubectl: Install kubectl, the Kubernetes command-line tool.
-4. eksctl: Install eksctl, a tool to create and manage Kubernetes clusters on Amazon EKS.
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
 
-## Setup Instructions
+## Install Kubernetes Tools (kubectl, kubeadm, kubelet) on Each Node:
 
-1. **AWS EC2 Instances:**
-   - Launch AWS EC2 instances for your Kubernetes nodes. Ensure instances have the necessary IAM roles and permissions.
+sudo apt update
+sudo apt install -y apt-transport-https ca-certificates curl
+sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt update
+sudo apt install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
 
-2. **Kubernetes Cluster:**
-   - Use eksctl to create a Kubernetes cluster on AWS EKS. 
+##Initialize the Kubernetes Master Node:
+## On the master node, run:
+sudo kubeadm init --pod-network-cidr=192.168.0.0/16
 
-     eksctl create cluster --name my-cluster --node-type t2.micro --nodes 2
-     ```
+## Set up the kubeconfig for the master node user:
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-3. **Microservices Application:**
-   - Deploy your microservices-based application to the Kubernetes cluster using Kubernetes manifests (YAML files).
+## Install a Pod Network Add-On:
+## On the master node, install a network add-on (e.g., Calico):
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
-4. **Troubleshooting:**
-   - If you encounter network issues or need to troubleshoot, check the logs using kubectl logs and describe pods/services.
+## Join Worker Nodes to the Cluster:
+## On the master node, get the join command:
+kubeadm token create --print-join-command
 
-5. **Resource Optimization:**
-   - Optimize resource allocation for your microservices pods. Update resource requests and limits in the Kubernetes manifests.
+## Run the join command on each worker node.
 
-## Directory Structure
+Step 2: Deploy Microservices on Kubernetes
 
-- `/k8s`: Contains Kubernetes manifests for deploying microservices.
-- `/scripts`: Includes any scripts used for deployment or troubleshooting.
-- `/docs`: Documentation and additional resources.
+## Create Kubernetes Manifests for Each Microservice:
+- Define Deployment, Service, and ConfigMap for each microservice root directory: 
 
-## Usage
+## microservice-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: microservice
+  labels:
+    app: microservice
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: microservice
+  template:
+    metadata:
+      labels:
+        app: microservice
+    spec:
+      containers:
+      - name: microservice
+        image: microservice-image
+        ports:
+        - containerPort: 80
 
-Provide instructions on how to deploy and run the microservices application on the Kubernetes cluster.
+## microservice-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: microservice
+spec:
+  selector:
+    app: microservice
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort
 
-## Contributing
+## Apply the Manifests to the Cluster:
 
-If you'd like to contribute or report issues, please follow the standard GitHub procedures for forking, creating branches, and submitting pull requests.
+kubectl apply -f microservice-deployment.yaml
+kubectl apply -f microservice-service.yaml
 
+Step 3: Manage Network and Resource Allocation
+## Troubleshoot Network Issues:
 
+- Use kubectl get pods -o wide to check pod IPs and status.
+- Use kubectl logs <pod-name> to check logs for errors.
+- Check network policies if using any network policy management.
+- Optimize Resource Allocation:
+
+## Define resource requests and limits in your deployment manifests.
+
+spec:
+  containers:
+  - name: microservice
+    image: microservice-image
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+
+## Monitor Cluster Health:
+
+## Install Kubernetes Dashboard or use tools like Prometheus and Grafana for monitoring.
+
+## Install Kubernetes Dashboard
+
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.2.0/aio/deploy/recommended.yaml
+
+Step 4: Continuous Integration and Deployment
+
+## Set Up a CI/CD Pipeline:
+## Use Jenkins, GitLab CI, or another CI/CD tool to automate builds and deployments.
+
+## Jenkins Pipeline:
+
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                sh 'docker build -t microservice-image .'
+            }
+        }
+        stage('Push') {
+            steps {
+                withCredentials([string(credentialsId: 'docker-hub-password', variable: 'DOCKER_HUB_PASSWORD')]) {
+                    sh 'echo $DOCKER_HUB_PASSWORD | docker login -u suryaprakash --password-stdin'
+                    sh 'docker push microservice-image'
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                kubectlDeploy(configs: 'k8s/microservice-deployment.yaml')
+                kubectlDeploy(configs: 'k8s/microservice-service.yaml')
+            }
+        }
+    }
+}
+
+Step 5: Maintenance and Scaling
+
+## Scale Applications:
+##Scale up or down as needed:
+kubectl scale deployment microservice --replicas=5
+
+## Rolling Updates:
+## Deploy updates without downtime:
+kubectl set image deployment/microservice microservice=microservice-image2
+
+## Cluster Autoscaling:
+
+## Set up the Kubernetes Cluster Autoscaler to automatically adjust the number of nodes.
+
+## Install Cluster Autoscaler on AWS:
+kubectl apply -f https://github.com/kubernetes/autoscaler/releases/download/cluster-autoscaler-1.20.0/cluster-autoscaler-autodiscover.yaml
