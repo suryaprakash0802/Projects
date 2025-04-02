@@ -43,22 +43,22 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H 62.72.1.215 >> ~/.ssh/known_hosts
+          ssh-keyscan -H <VPS_IP> >> ~/.ssh/known_hosts
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Copy files to VPS
         run: |
-          ssh root@62.72.1.215 "mkdir -p /var/www/readium_laravel"
-          scp -r * root@62.72.1.215:/var/www/readium_laravel
+          ssh root@<VPS_IP> "mkdir -p /var/www/readium_laravel"
+          scp -r * root@<VPS_IP>:/var/www/readium_laravel
 
       - name: Install Composer dependencies
         run: |
-          ssh root@62.72.1.215 "cd /var/www/readium_laravel && composer install --no-dev --prefer-dist --no-interaction || { echo 'Composer install failed'; exit 1; }"
+          ssh root@<VPS_IP> "cd /var/www/readium_laravel && composer install --no-dev --prefer-dist --no-interaction || { echo 'Composer install failed'; exit 1; }"
 
       - name: SSH commands
         run: |
-          ssh root@62.72.1.215 << 'EOF'
+          ssh root@<VPS_IP> << 'EOF'
           cd /var/www/readium_laravel
           php artisan migrate --force
           php artisan config:cache
