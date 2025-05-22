@@ -1,0 +1,68 @@
+📋 Overview
+- This repository demonstrates a complete CI/CD pipeline for deploying a .NET Core web application using Azure DevOps, with:
+- Source Control: GitHub repository
+- Build & Release Pipelines: Azure DevOps
+- Agent: Self-hosted Azure DevOps agent running on an Azure Windows Server VM
+- Deployment Target: IIS on Azure Windows Server VM
+
+🛠 Prerequisites
+- .NET Core Web Application (ASP.NET Core)
+- Azure DevOps Account
+- GitHub Repository
+- Azure Windows Server VM (for self-hosted agent & deployment)
+
+Installed on Azure VM:
+- Git
+- .NET Core Runtime & SDK
+- IIS (with Web Deploy or manual deployment setup)
+- Azure DevOps Agent (configured)
+- SQL Server
+
+🔁 CI/CD Pipeline Workflow
+1. Version Control with GitHub
+- All code is stored and managed in a GitHub repository.
+- Azure DevOps is connected to GitHub via a GitHub service connection.
+- Any push to a specific branch (e.g., main) triggers the pipeline.
+
+2. CI Pipeline (Build Stage)
+- Triggered on code commit or pull request.
+- Builds the project.
+- Publishes build artifacts.
+
+3. CD Pipeline (Release Stage)
+- Triggered after a successful build.
+- Uses self-hosted agent to deploy to the Azure VM.
+- Deploys to IIS or a specified directory.
+
+Tasks include:
+- Download artifacts
+- Stop IIS site (optional)
+- Replace files
+- Start IIS site (optional)
+
+🧰 Setting Up the Self-Hosted Agent on Azure VM
+- Create a Windows Server VM on Azure.
+- Download the Azure DevOps Agent from your Azure DevOps organization.
+- Extract and configure it using the following:
+
+.\config.cmd --url https://dev.azure.com/{YourOrg} --auth pat --token {YourPAT} --pool {AgentPoolName}
+Run the agent:
+
+.\run.cmd
+
+Or install it as a service:
+.\svc install
+.\svc start
+
+✅ IIS Deployment Steps on Azure VM
+- Install IIS and enable required components (ASP.NET Core Hosting Bundle, Web Deploy if needed).
+- Create a new IIS site (e.g., MyWebApp) with a physical path to the deployment folder.
+- Make sure the self-hosted agent has write permissions to this folder.
+- Optional: Configure bindings (host name, SSL, etc.).
+
+🔐 Security & Best Practices
+- Use PAT (Personal Access Tokens) securely in Azure DevOps.
+- Limit self-hosted agent access to required scopes and secure the Azure VM.
+- Use environment variables and Azure Key Vault for sensitive data (e.g., connection strings).
+- Implement branch protection on GitHub to restrict direct commits to main.
+
